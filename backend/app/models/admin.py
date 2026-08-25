@@ -13,6 +13,7 @@ class GenerationStatusBreakdown(BaseModel):
 class GenerationProviderBreakdown(BaseModel):
     openai: int
     gemini: int
+    minimax: int
 
 
 class AdminStatsResponse(BaseModel):

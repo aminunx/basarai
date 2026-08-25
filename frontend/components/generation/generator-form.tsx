@@ -39,15 +39,14 @@ export function GeneratorForm({ brandId, brandName, brandHasLogo }: GeneratorFor
 
   useEffect(() => {
     if (keysLoading || providerInitialized) return
-    if (activeKeys.openaiActive && !activeKeys.geminiActive) {
-      setProvider('openai')
-    } else if (!activeKeys.openaiActive && activeKeys.geminiActive) {
-      setProvider('gemini')
-    } else if (activeKeys.openaiActive && activeKeys.geminiActive) {
-      setProvider('gemini')
-    } else {
-      setProvider('openai')
-    }
+    // Prefer a provider the brand can actually generate with; fall back to
+     // OpenAI so the form still renders when no key is configured at all.
+    const available = ([
+      ['gemini', activeKeys.geminiActive],
+      ['minimax', activeKeys.minimaxActive],
+      ['openai', activeKeys.openaiActive],
+    ] as const).filter(([, active]) => active)
+    setProvider(available.length > 0 ? available[0][0] : 'openai')
     setProviderInitialized(true)
   }, [keysLoading, activeKeys, providerInitialized])
 
@@ -55,7 +54,8 @@ export function GeneratorForm({ brandId, brandName, brandHasLogo }: GeneratorFor
   const submitting = state.status === 'submitting'
   const hasActiveKey =
     (provider === 'openai' && activeKeys.openaiActive) ||
-    (provider === 'gemini' && activeKeys.geminiActive)
+    (provider === 'gemini' && activeKeys.geminiActive) ||
+    (provider === 'minimax' && activeKeys.minimaxActive)
   const generateDisabled =
     submitting ||
     trimmedLen < 3 ||

@@ -36,6 +36,7 @@ PRESET_TO_ASPECT_RATIO: dict[str, str] = {
 MODEL_FOR_PROVIDER: dict[str, str] = {
     "openai": "gpt-image-2",
     "gemini": "gemini-3-pro-image-preview",
+    "minimax": "image-01",
 }
 
 _BRAND_NAME_NON_ALNUM = re.compile(r"[^a-z0-9]+")

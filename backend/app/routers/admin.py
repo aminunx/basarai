@@ -59,6 +59,7 @@ def _to_stats_response(row: dict) -> AdminStatsResponse:
         generations_by_provider=GenerationProviderBreakdown(
             openai=row["generations_openai"],
             gemini=row["generations_gemini"],
+            minimax=row["generations_minimax"],
         ),
         generations_last_7d=row["generations_last_7d"],
         generations_last_30d=row["generations_last_30d"],

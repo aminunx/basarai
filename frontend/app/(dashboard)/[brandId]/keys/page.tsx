@@ -10,7 +10,7 @@ import { AddKeyModal } from '@/components/keys/add-key-modal'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
 import { apiRequest } from '@/lib/api'
-import { ProviderKey, ValidateKeyResponse } from '@/types'
+import { ProviderKey, ValidateKeyResponse, type Provider } from '@/types'
 
 export default function KeysPage() {
   const params = useParams()
@@ -18,7 +18,7 @@ export default function KeysPage() {
   const { keys, loading, error, refetch } = useKeys(brandId)
 
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addModalProvider, setAddModalProvider] = useState<'openai' | 'gemini'>('openai')
+  const [addModalProvider, setAddModalProvider] = useState<Provider>('openai')
   const [validatingKeyId, setValidatingKeyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -59,7 +59,7 @@ export default function KeysPage() {
     }
   }
 
-  const handleAddClick = (provider: 'openai' | 'gemini') => {
+  const handleAddClick = (provider: Provider) => {
     setAddModalProvider(provider)
     setShowAddModal(true)
   }

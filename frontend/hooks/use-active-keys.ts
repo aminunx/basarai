@@ -7,6 +7,7 @@ import type { ProviderKey } from '@/types'
 export interface ActiveKeys {
   openaiActive: boolean
   geminiActive: boolean
+  minimaxActive: boolean
 }
 
 interface UseActiveKeysResult {
@@ -20,6 +21,7 @@ export function useActiveKeys(brandId: string): UseActiveKeysResult {
   const [activeKeys, setActiveKeys] = useState<ActiveKeys>({
     openaiActive: false,
     geminiActive: false,
+    minimaxActive: false,
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -32,9 +34,10 @@ export function useActiveKeys(brandId: string): UseActiveKeysResult {
       setActiveKeys({
         openaiActive: keys.some(k => k.provider === 'openai' && k.is_active),
         geminiActive: keys.some(k => k.provider === 'gemini' && k.is_active),
+        minimaxActive: keys.some(k => k.provider === 'minimax' && k.is_active),
       })
     } catch (err) {
-      setActiveKeys({ openaiActive: false, geminiActive: false })
+      setActiveKeys({ openaiActive: false, geminiActive: false, minimaxActive: false })
       setError(err instanceof Error ? err.message : 'Failed to load keys')
     } finally {
       setLoading(false)

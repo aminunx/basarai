@@ -52,7 +52,7 @@ export interface LogoUploadResponse {
 
 export interface ProviderKey {
   id: string
-  provider: 'openai' | 'gemini'
+  provider: 'openai' | 'gemini' | 'minimax'
   label: string | null
   key_hint: string | null
   is_active: boolean
@@ -63,7 +63,7 @@ export interface ProviderKey {
 }
 
 export interface AddKeyRequest {
-  provider: 'openai' | 'gemini'
+  provider: 'openai' | 'gemini' | 'minimax'
   key: string
   label?: string | null
   make_active?: boolean
@@ -101,7 +101,7 @@ export interface UpsertKitRequest {
   answers: KitAnswers
 }
 
-export type Provider = 'openai' | 'gemini'
+export type Provider = 'openai' | 'gemini' | 'minimax'
 export type LogoMode = 'none' | 'prompt' | 'watermark' | 'both'
 export type GenerationStatus = 'pending' | 'processing' | 'succeeded' | 'failed'
 

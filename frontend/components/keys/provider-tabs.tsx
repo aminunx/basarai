@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react'
 import { ProviderKey } from '@/types'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 
-type Provider = 'openai' | 'gemini'
+type Provider = 'openai' | 'gemini' | 'minimax'
 
 interface ProviderTabsProps {
   keys: ProviderKey[]
@@ -16,6 +16,7 @@ export function ProviderTabs({ keys, children }: ProviderTabsProps) {
   const filteredKeys = keys.filter((k) => k.provider === activeProvider)
   const openaiCount = keys.filter((k) => k.provider === 'openai').length
   const geminiCount = keys.filter((k) => k.provider === 'gemini').length
+  const minimaxCount = keys.filter((k) => k.provider === 'minimax').length
 
   return (
     <div className="space-y-4">
@@ -26,6 +27,7 @@ export function ProviderTabs({ keys, children }: ProviderTabsProps) {
         options={[
           { value: 'openai', label: `OpenAI (${openaiCount})` },
           { value: 'gemini', label: `Gemini (${geminiCount})` },
+          { value: 'minimax', label: `MiniMax (${minimaxCount})` },
         ]}
       />
       {children(filteredKeys, activeProvider)}

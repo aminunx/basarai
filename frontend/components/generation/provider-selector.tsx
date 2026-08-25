@@ -19,7 +19,8 @@ export function ProviderSelector({
 }: ProviderSelectorProps) {
   const currentHasKey =
     (value === 'openai' && activeKeys.openaiActive) ||
-    (value === 'gemini' && activeKeys.geminiActive)
+    (value === 'gemini' && activeKeys.geminiActive) ||
+    (value === 'minimax' && activeKeys.minimaxActive)
 
   return (
     <div className="flex flex-col gap-2">
@@ -32,6 +33,7 @@ export function ProviderSelector({
         options={[
           { value: 'openai', label: 'OpenAI' },
           { value: 'gemini', label: 'Gemini' },
+          { value: 'minimax', label: 'MiniMax' },
         ]}
       />
       {!currentHasKey && <NoKeyNotice provider={value} brandId={brandId} />}

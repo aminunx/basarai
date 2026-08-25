@@ -34,6 +34,7 @@ from app.services.presets import (
 from app.services.prompt_composer import BrandContext, build_platform_context, compose_full_prompt
 from app.services.providers.base import ProviderError, ProviderResult
 from app.services.providers.gemini_image import gemini_generate
+from app.services.providers.minimax_image import minimax_generate
 from app.services.providers.openai_image import openai_generate
 from app.services.watermark import apply_watermark
 
@@ -342,6 +343,16 @@ async def generate_image(
                         prompt=full_prompt,
                         width=preset_w,
                         height=preset_h,
+                        model=resolved_model,
+                    ),
+                    timeout=120.0,
+                )
+            elif body.provider is ProviderEnum.minimax:
+                result = await asyncio.wait_for(
+                    minimax_generate(
+                        api_key=api_key,
+                        prompt=full_prompt,
+                        aspect_ratio=aspect_ratio,
                         model=resolved_model,
                     ),
                     timeout=120.0,

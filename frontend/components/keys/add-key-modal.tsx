@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
-import { ProviderKey } from '@/types'
+import { ProviderKey, type Provider } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +16,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+
+const PROVIDERS: readonly Provider[] = ['openai', 'gemini', 'minimax']
+
+function isProvider(value: string | undefined): value is Provider {
+  return value !== undefined && (PROVIDERS as readonly string[]).includes(value)
+}
 
 interface AddKeyModalProps {
   brandId: string
@@ -32,8 +38,8 @@ export function AddKeyModal({
   onKeyAdded,
   defaultProvider,
 }: AddKeyModalProps) {
-  const [provider, setProvider] = useState<'openai' | 'gemini'>(
-    defaultProvider === 'openai' || defaultProvider === 'gemini' ? defaultProvider : 'openai'
+  const [provider, setProvider] = useState<Provider>(
+    isProvider(defaultProvider) ? defaultProvider : 'openai'
   )
   const [key, setKey] = useState('')
   const [label, setLabel] = useState('')
@@ -44,7 +50,7 @@ export function AddKeyModal({
 
   useEffect(() => {
     if (!open) return
-    if (defaultProvider === 'openai' || defaultProvider === 'gemini') {
+    if (isProvider(defaultProvider)) {
       setProvider(defaultProvider)
     }
   }, [open, defaultProvider])
@@ -101,6 +107,7 @@ export function AddKeyModal({
               options={[
                 { value: 'openai', label: 'OpenAI' },
                 { value: 'gemini', label: 'Gemini' },
+                { value: 'minimax', label: 'MiniMax' },
               ]}
             />
           </div>

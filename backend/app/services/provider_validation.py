@@ -53,10 +53,42 @@ async def validate_gemini_key(api_key: str) -> tuple[bool | None, str | None]:
         return (None, "Provider API request failed")
 
 
+async def validate_minimax_key(api_key: str) -> tuple[bool | None, str | None]:
+    """Validate a MiniMax Subscription Key (sk-cp…).
+
+    The image endpoint answers 200 OK even for a bad credential, hiding the real
+    outcome in base_resp.status_code, so it is a poor validator — and a generation
+    would cost quota. /v1/models behaves conventionally instead: 200 when the key
+    is good, 401 when it is not, and it consumes nothing.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
+                "https://api.minimax.io/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+            if resp.status_code == 200:
+                return (True, None)
+            if resp.status_code == 401:
+                try:
+                    message = resp.json()["error"]["message"]
+                except (ValueError, KeyError, TypeError):
+                    message = "Invalid API key"
+                return (False, message)
+            return (False, f"Unexpected status code: {resp.status_code}")
+    except httpx.TimeoutException:
+        return (None, "Provider API timed out")
+    except httpx.HTTPError:
+        logger.exception("MiniMax validation request failed")
+        return (None, "Provider API request failed")
+
+
 async def validate_provider_key(provider: str, api_key: str) -> tuple[bool | None, str | None]:
     logger.debug("Validating %s key", provider)
     if provider == "openai":
         return await validate_openai_key(api_key)
     if provider == "gemini":
         return await validate_gemini_key(api_key)
+    if provider == "minimax":
+        return await validate_minimax_key(api_key)
     return (False, f"Unsupported provider: {provider}")

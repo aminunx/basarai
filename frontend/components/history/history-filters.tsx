@@ -47,6 +47,7 @@ export function HistoryFilters({
         <option value="">All providers</option>
         <option value="openai">OpenAI</option>
         <option value="gemini">Gemini</option>
+        <option value="minimax">MiniMax</option>
       </select>
       <label htmlFor="history-preset" className="sr-only">
         Filter by preset

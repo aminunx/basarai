@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 class ProviderEnum(str, Enum):
     openai = "openai"
     gemini = "gemini"
+    minimax = "minimax"
 
 
 class LogoModeEnum(str, Enum):
