@@ -183,6 +183,7 @@ export interface GenerationStatusBreakdown {
 export interface GenerationProviderBreakdown {
   openai: number
   gemini: number
+  minimax: number
 }
 
 export interface AdminStats {
