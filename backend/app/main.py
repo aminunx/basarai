@@ -66,7 +66,13 @@ async def request_validation_exception_handler(
         ),
         None,
     )
-    message = name_error or "Invalid request payload"
+    # Fall back to the first validator's own message rather than a blanket
+    # "Invalid request payload" — an opaque 400 here is very hard to diagnose
+    # from the browser.
+    first_error = next((error.get("msg") for error in errors if error.get("msg")), None)
+    if first_error:
+        first_error = first_error.removeprefix("Value error, ")
+    message = name_error or first_error or "Invalid request payload"
     return JSONResponse(
         status_code=400,
         content={

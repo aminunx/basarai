@@ -33,6 +33,7 @@ def test_model_for_provider():
     assert MODEL_FOR_PROVIDER == {
         "openai": "gpt-image-2",
         "gemini": "gemini-3-pro-image-preview",
+        "minimax": "image-01",
     }
 
 
@@ -71,3 +72,25 @@ def test_build_download_filename_converts_to_utc():
     dt = datetime(2026, 4, 11, 10, 30, 52, tzinfo=eastern)
     result = build_download_filename("My Brand!", "instagram_post", dt)
     assert result == "my-brand-instagram_post-20260411-143052.png"
+
+
+def test_add_key_accepts_every_generation_provider():
+    """The key form and the generation endpoint must agree on the provider list.
+
+    They were separately hardcoded once, so a provider could be generated with
+    but not have its key accepted.
+    """
+    from app.models.generation import ProviderEnum
+    from app.models.provider_key import AddKeyRequest
+
+    for provider in ProviderEnum:
+        request = AddKeyRequest(provider=provider.value, key="sk-test-key")
+        assert request.provider == provider.value
+
+
+def test_add_key_rejects_an_unknown_provider():
+    import pytest as _pytest
+    from app.models.provider_key import AddKeyRequest
+
+    with _pytest.raises(ValueError):
+        AddKeyRequest(provider="stability", key="sk-test-key")

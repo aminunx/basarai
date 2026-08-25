@@ -17,7 +17,8 @@ def _make_admin_stats_row(**overrides):
         "generations_succeeded": 29,
         "generations_failed": 6,
         "generations_openai": 23,
-        "generations_gemini": 17,
+        "generations_gemini": 12,
+        "generations_minimax": 5,
         "generations_last_7d": 11,
         "generations_last_30d": 34,
         "brand_kits_complete": 15,
@@ -38,7 +39,8 @@ def test_admin_stats_response_maps_flat_view_row_to_nested_breakdowns():
     assert stats.generations_by_status.succeeded == 29
     assert stats.generations_by_status.failed == 6
     assert stats.generations_by_provider.openai == 23
-    assert stats.generations_by_provider.gemini == 17
+    assert stats.generations_by_provider.gemini == 12
+    assert stats.generations_by_provider.minimax == 5
     assert stats.generations_last_7d == 11
     assert stats.generations_last_30d == 34
     assert stats.brand_kits_complete == 15
@@ -53,6 +55,7 @@ def test_admin_stats_response_maps_flat_view_row_to_nested_breakdowns():
     assert (
         stats.generations_by_provider.openai
         + stats.generations_by_provider.gemini
+        + stats.generations_by_provider.minimax
         == stats.total_generations
     )
 
