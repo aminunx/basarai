@@ -7,6 +7,13 @@
 -- the brand has registered, so the column only needs to hold an identifier.
 --
 -- Existing values ('openai', 'gemini', 'minimax') survive the cast unchanged.
+--
+-- admin_stats reads generations.provider, and Postgres refuses to alter a
+-- column a view depends on — so the view is dropped here and rebuilt in 00018.
+-- Every step is written to be safe to re-run, because a failure part-way
+-- through leaves the two tables in different states.
+
+DROP VIEW IF EXISTS admin_stats;
 
 ALTER TABLE provider_keys ALTER COLUMN provider TYPE text USING provider::text;
 ALTER TABLE generations   ALTER COLUMN provider TYPE text USING provider::text;
@@ -16,10 +23,12 @@ DROP TYPE IF EXISTS provider_t;
 -- A slug is what the rest of the system keys on, so keep it URL-safe and
 -- distinct from any built-in id (enforced in the application, which is the
 -- only place that knows the built-in list).
+ALTER TABLE provider_keys DROP CONSTRAINT IF EXISTS chk_provider_keys_provider_format;
 ALTER TABLE provider_keys
   ADD CONSTRAINT chk_provider_keys_provider_format
   CHECK (provider ~ '^[a-z0-9][a-z0-9_-]{0,38}[a-z0-9]$');
 
+ALTER TABLE generations DROP CONSTRAINT IF EXISTS chk_generations_provider_format;
 ALTER TABLE generations
   ADD CONSTRAINT chk_generations_provider_format
   CHECK (provider ~ '^[a-z0-9][a-z0-9_-]{0,38}[a-z0-9]$');
@@ -36,7 +45,7 @@ COMMENT ON COLUMN generations.provider IS
 -- Brand-scoped, like every other resource here: a custom endpoint belongs to
 -- exactly one brand and is never visible to another.
 
-CREATE TABLE custom_providers (
+CREATE TABLE IF NOT EXISTS custom_providers (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_id    UUID NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   slug        TEXT NOT NULL,
@@ -55,9 +64,10 @@ CREATE TABLE custom_providers (
   CONSTRAINT chk_custom_providers_url    CHECK (base_url ~* '^https://[a-z0-9.-]+(:[0-9]+)?(/[^\s]*)?$')
 );
 
-CREATE UNIQUE INDEX uq_custom_providers_slug ON custom_providers(brand_id, slug);
-CREATE INDEX idx_custom_providers_brand ON custom_providers(brand_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_custom_providers_slug ON custom_providers(brand_id, slug);
+CREATE INDEX IF NOT EXISTS idx_custom_providers_brand ON custom_providers(brand_id, created_at DESC);
 
+DROP TRIGGER IF EXISTS trg_custom_providers_updated_at ON custom_providers;
 CREATE TRIGGER trg_custom_providers_updated_at
   BEFORE UPDATE ON custom_providers
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
@@ -76,14 +86,18 @@ COMMENT ON COLUMN custom_providers.base_url IS
 ALTER TABLE custom_providers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_providers FORCE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS custom_providers_select_own ON custom_providers;
 CREATE POLICY custom_providers_select_own ON custom_providers
   FOR SELECT USING (is_brand_owner(brand_id));
 
+DROP POLICY IF EXISTS custom_providers_insert_own ON custom_providers;
 CREATE POLICY custom_providers_insert_own ON custom_providers
   FOR INSERT WITH CHECK (is_brand_owner(brand_id));
 
+DROP POLICY IF EXISTS custom_providers_update_own ON custom_providers;
 CREATE POLICY custom_providers_update_own ON custom_providers
   FOR UPDATE USING (is_brand_owner(brand_id)) WITH CHECK (is_brand_owner(brand_id));
 
+DROP POLICY IF EXISTS custom_providers_delete_own ON custom_providers;
 CREATE POLICY custom_providers_delete_own ON custom_providers
   FOR DELETE USING (is_brand_owner(brand_id));
