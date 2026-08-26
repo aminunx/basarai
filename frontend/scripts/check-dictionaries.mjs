@@ -16,6 +16,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 // literal API tokens, which are not prose and must not be translated.
 const ALLOWED_IDENTICAL = new Set([
   'providers.authBearer',
+  'auth.emailPlaceholder',
   'admin.openaiGenerations',
   'admin.geminiGenerations',
   'admin.minimaxGenerations',
