@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
+import { useDict } from '@/lib/i18n/provider'
 import type { Provider, ProviderInfo, ProviderKey } from '@/types'
 
 interface ProviderTabsProps {
@@ -14,6 +15,7 @@ interface ProviderTabsProps {
  * in a fixed segmented control.
  */
 export function ProviderTabs({ keys, providers, children }: ProviderTabsProps) {
+  const d = useDict()
   const [activeProvider, setActiveProvider] = useState<Provider>(providers[0]?.id ?? 'openai')
 
   // The catalogue arrives asynchronously, and a custom provider can be removed
@@ -29,7 +31,7 @@ export function ProviderTabs({ keys, providers, children }: ProviderTabsProps) {
 
   return (
     <div className="space-y-4">
-      <div role="tablist" aria-label="Provider" className="flex flex-wrap gap-1.5">
+      <div role="tablist" aria-label={d.generator.provider} className="flex flex-wrap gap-1.5">
         {providers.map((provider) => {
           const count = keys.filter((k) => k.provider === provider.id).length
           const selected = provider.id === activeProvider
@@ -49,7 +51,9 @@ export function ProviderTabs({ keys, providers, children }: ProviderTabsProps) {
             >
               {provider.label} ({count})
               {provider.is_custom && (
-                <span className="ml-1.5 font-mono text-[10px] opacity-60">custom</span>
+                <span className="ms-1.5 font-mono text-[10px] opacity-60">
+                  {d.providers.custom}
+                </span>
               )}
             </button>
           )

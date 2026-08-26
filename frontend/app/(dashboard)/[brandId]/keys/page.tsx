@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { useKeys } from '@/hooks/use-keys'
+import { useDict, useLocale } from '@/lib/i18n/provider'
 import { useProviders } from '@/hooks/use-providers'
 import { CustomProviderPanel } from '@/components/keys/custom-provider-panel'
 import { ProviderTabs } from '@/components/keys/provider-tabs'
@@ -17,6 +18,8 @@ import { ProviderKey, ValidateKeyResponse, type Provider } from '@/types'
 export default function KeysPage() {
   const params = useParams()
   const brandId = Array.isArray(params.brandId) ? params.brandId[0] : params.brandId ?? ''
+  const d = useDict()
+  const { t } = useLocale()
   const { keys, loading, error, refetch } = useKeys(brandId)
   const { providers, loading: providersLoading, refetch: refetchProviders } =
     useProviders(brandId)
@@ -69,20 +72,20 @@ export default function KeysPage() {
   }
 
   if (loading || providersLoading) {
-    return <p className="text-muted-foreground">Loading…</p>
+    return <p className="text-muted-foreground">{d.common.loading}</p>
   }
 
   if (error) {
-    return <p className="text-destructive">Failed to load keys.</p>
+    return <p className="text-destructive">{d.errors.loadFailed}</p>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-[30px] font-semibold leading-[1.16] tracking-tight">Keys</h1>
+        <h1 className="text-[30px] font-semibold leading-[1.16] tracking-tight">{d.keys.title}</h1>
         <Button type="button" onClick={() => handleAddClick(providers[0]?.id ?? '')}>
           <Plus className="h-4 w-4" />
-          Add key
+          {d.keys.addKey}
         </Button>
       </div>
 
@@ -93,15 +96,18 @@ export default function KeysPage() {
           <div className="space-y-2.5">
             {filteredKeys.length === 0 ? (
               <Notice variant="warning">
-                No {providers.find((p) => p.id === activeProvider)?.label ?? activeProvider} key yet —{' '}
+                {t(d.keys.noKeyYet, {
+                  provider:
+                    providers.find((p) => p.id === activeProvider)?.label ?? activeProvider,
+                })}{' '}
                 <button
                   type="button"
                   onClick={() => handleAddClick(activeProvider)}
                   className="font-medium underline underline-offset-2"
                 >
-                  Add one
+                  {d.generator.addOne}
                 </button>{' '}
-                to generate with this provider.
+                {d.generator.toGenerate}
               </Notice>
             ) : (
               filteredKeys.map((k) => (

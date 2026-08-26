@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Notice } from '@/components/ui/notice'
+import { useDict, useLocale } from '@/lib/i18n/provider'
 import type { CustomProvider, ProviderInfo } from '@/types'
 
 interface CustomProviderPanelProps {
@@ -42,6 +43,8 @@ function slugify(label: string): string {
 }
 
 export function CustomProviderPanel({ brandId, providers, onChanged }: CustomProviderPanelProps) {
+  const d = useDict()
+  const { t } = useLocale()
   const [custom, setCustom] = useState<CustomProvider[]>([])
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<CustomProviderForm>({ ...EMPTY })
@@ -80,21 +83,21 @@ export function CustomProviderPanel({ brandId, providers, onChanged }: CustomPro
       await load()
       onChanged()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not add the provider')
+      setError(err instanceof Error ? err.message : d.providers.addFailed)
     } finally {
       setSaving(false)
     }
   }
 
   async function handleDelete(id: string, label: string) {
-    if (!window.confirm(`Remove ${label}? Any keys stored for it are deleted too.`)) return
+    if (!window.confirm(t(d.providers.confirmRemove, { provider: label }))) return
     setError(null)
     try {
       await apiRequest(`/brands/${brandId}/providers/custom/${id}`, { method: 'DELETE' })
       await load()
       onChanged()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not remove the provider')
+      setError(err instanceof Error ? err.message : d.providers.removeFailed)
     }
   }
 
@@ -104,16 +107,14 @@ export function CustomProviderPanel({ brandId, providers, onChanged }: CustomPro
     <section className="space-y-3 rounded-lg border border-border-subtle p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[15px] font-semibold">Custom providers</h2>
+          <h2 className="text-[15px] font-semibold">{d.providers.customTitle}</h2>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
-            Point Basar at any endpoint that implements OpenAI&apos;s image API — a hosted
-            gateway, an Azure deployment, or your own server. {catalogueCount} providers are
-            built in.
+            {t(d.providers.customDescription, { count: catalogueCount })}
           </p>
         </div>
         <Button type="button" variant="secondary" onClick={() => setOpen((v) => !v)}>
           <Plus className="h-4 w-4" />
-          {open ? 'Cancel' : 'Add provider'}
+          {open ? d.common.cancel : d.providers.addProvider}
         </Button>
       </div>
 
@@ -122,18 +123,18 @@ export function CustomProviderPanel({ brandId, providers, onChanged }: CustomPro
       {open && (
         <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="cp-label">Name</Label>
+            <Label htmlFor="cp-label">{d.providers.name}</Label>
             <Input
               id="cp-label"
               value={form.label}
               onChange={(e) => updateLabel(e.target.value)}
-              placeholder="My Gateway"
+              placeholder={d.providers.namePlaceholder}
               required
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cp-slug">Identifier</Label>
+            <Label htmlFor="cp-slug">{d.providers.identifier}</Label>
             <Input
               id="cp-slug"
               value={form.slug}
@@ -145,13 +146,11 @@ export function CustomProviderPanel({ brandId, providers, onChanged }: CustomPro
               pattern="[a-z0-9][a-z0-9_-]{0,38}[a-z0-9]"
               required
             />
-            <p className="text-[11px] text-muted-foreground">
-              Lowercase letters, digits, hyphens. Stored with every generation.
-            </p>
+            <p className="text-[11px] text-muted-foreground">{d.providers.identifierHint}</p>
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="cp-url">Base URL</Label>
+            <Label htmlFor="cp-url">{d.providers.baseUrl}</Label>
             <Input
               id="cp-url"
               type="url"
@@ -160,13 +159,11 @@ export function CustomProviderPanel({ brandId, providers, onChanged }: CustomPro
               placeholder="https://api.example.com/v1"
               required
             />
-            <p className="text-[11px] text-muted-foreground">
-              HTTPS only. <code>/images/generations</code> is appended automatically.
-            </p>
+            <p className="text-[11px] text-muted-foreground">{d.providers.baseUrlHint}</p>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cp-model">Model</Label>
+            <Label htmlFor="cp-model">{d.providers.model}</Label>
             <Input
               id="cp-model"
               value={form.model}
@@ -177,7 +174,7 @@ export function CustomProviderPanel({ brandId, providers, onChanged }: CustomPro
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cp-auth">Authentication</Label>
+            <Label htmlFor="cp-auth">{d.providers.auth}</Label>
             <select
               id="cp-auth"
               value={form.auth_style}
@@ -186,14 +183,14 @@ export function CustomProviderPanel({ brandId, providers, onChanged }: CustomPro
               }
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-[13px] shadow-xs focus-visible:border-brand focus-visible:shadow-[0_0_0_3px_var(--brand-ring)] focus-visible:outline-none"
             >
-              <option value="bearer">Authorization: Bearer</option>
-              <option value="x-api-key">x-api-key header</option>
+              <option value="bearer">{d.providers.authBearer}</option>
+              <option value="x-api-key">{d.providers.authHeader}</option>
             </select>
           </div>
 
           <div className="sm:col-span-2">
             <Button type="submit" disabled={saving}>
-              {saving ? 'Adding…' : 'Add provider'}
+              {saving ? d.keys.adding : d.providers.addProvider}
             </Button>
           </div>
         </form>
@@ -213,7 +210,7 @@ export function CustomProviderPanel({ brandId, providers, onChanged }: CustomPro
                 type="button"
                 variant="secondary"
                 onClick={() => handleDelete(provider.id, provider.label)}
-                aria-label={`Remove ${provider.label}`}
+                aria-label={`${d.common.remove} ${provider.label}`}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

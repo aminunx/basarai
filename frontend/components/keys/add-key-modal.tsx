@@ -7,6 +7,7 @@ import { ProviderKey, type Provider, type ProviderInfo } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useDict } from '@/lib/i18n/provider'
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ export function AddKeyModal({
   const [showKey, setShowKey] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const d = useDict()
 
   const selectedProvider = providers.find((p) => p.id === provider)
 
@@ -87,14 +89,14 @@ export function AddKeyModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-[460px]">
         <DialogHeader>
-          <DialogTitle>Add API key</DialogTitle>
+          <DialogTitle>{d.keys.addKeyTitle}</DialogTitle>
           <DialogDescription>
-            Add a key for an image provider. It is stored securely and never shown again.
+            {d.keys.addKeyDescription}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Provider</Label>
+            <Label>{d.generator.provider}</Label>
             <select
               id="add-key-provider"
               value={provider}
@@ -119,13 +121,13 @@ export function AddKeyModal({
                 rel="noreferrer noopener"
                 className="text-[12px] underline underline-offset-2 text-muted-foreground hover:text-foreground"
               >
-                Where to find this key
+                {d.keys.whereToFind}
               </a>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="api-key">API key</Label>
+            <Label htmlFor="api-key">{d.keys.apiKey}</Label>
             <div className="relative">
               <Input
                 id="api-key"
@@ -148,7 +150,7 @@ export function AddKeyModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="key-label">Label (optional)</Label>
+            <Label htmlFor="key-label">{`${d.keys.label} (${d.common.optional})`}</Label>
             <Input
               id="key-label"
               type="text"
@@ -166,17 +168,17 @@ export function AddKeyModal({
               onChange={(e) => setMakeActive(e.target.checked)}
               className="h-4 w-4 rounded border-input accent-[var(--brand)]"
             />
-            Set as active key for this provider
+            {d.keys.makeActive}
           </label>
 
           {error && <p className="text-[13px] text-destructive">{error}</p>}
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {d.common.cancel}
             </Button>
             <Button type="submit" disabled={loading || !key.trim()}>
-              {loading ? 'Adding…' : 'Add key'}
+              {loading ? d.keys.adding : d.keys.addKey}
             </Button>
           </DialogFooter>
         </form>

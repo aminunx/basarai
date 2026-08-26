@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Notice } from '@/components/ui/notice'
+import { useDict, useLocale } from '@/lib/i18n/provider'
 
 interface NoKeyNoticeProps {
   /** Display name, resolved by the caller from the provider catalogue. */
@@ -8,16 +9,18 @@ interface NoKeyNoticeProps {
 }
 
 export function NoKeyNotice({ providerLabel, brandId }: NoKeyNoticeProps) {
+  const d = useDict()
+  const { t } = useLocale()
   return (
     <Notice variant="warning">
-      No {providerLabel} key yet —{' '}
+      {t(d.generator.noKeyForProvider, { provider: providerLabel })}{' '}
       <Link
         href={`/${brandId}/keys`}
         className="font-medium underline underline-offset-2"
       >
-        Add one
+        {d.generator.addOne}
       </Link>{' '}
-      to generate with this provider.
+      {d.generator.toGenerate}
     </Notice>
   )
 }

@@ -5,6 +5,7 @@ import type { ActiveKeys } from '@/hooks/use-active-keys'
 import { NoKeyNotice } from '@/components/generation/no-key-notice'
 import { Eyebrow } from '@/components/ui/eyebrow'
 import { SegmentedControl } from '@/components/ui/segmented-control'
+import { useDict } from '@/lib/i18n/provider'
 
 interface ProviderSelectorProps {
   value: Provider
@@ -22,19 +23,20 @@ const SEGMENTED_LIMIT = 3
 export function ProviderSelector({
   value, onChange, providers, activeKeys, brandId, disabled,
 }: ProviderSelectorProps) {
+  const d = useDict()
   const current = providers.find((p) => p.id === value)
   const currentHasKey = Boolean(activeKeys[value])
 
   const label = (provider: ProviderInfo) =>
-    activeKeys[provider.id] ? provider.label : `${provider.label} — no key`
+    activeKeys[provider.id] ? provider.label : `${provider.label} — ${d.keys.unchecked}`
 
   return (
     <div className="flex flex-col gap-2">
-      <Eyebrow>Provider</Eyebrow>
+      <Eyebrow>{d.generator.provider}</Eyebrow>
 
       {providers.length <= SEGMENTED_LIMIT ? (
         <SegmentedControl
-          aria-label="Provider"
+          aria-label={d.generator.provider}
           value={value}
           onChange={onChange}
           disabled={disabled}
@@ -43,7 +45,7 @@ export function ProviderSelector({
       ) : (
         <>
           <label htmlFor="provider-select" className="sr-only">
-            Provider
+            {d.generator.provider}
           </label>
           <select
             id="provider-select"

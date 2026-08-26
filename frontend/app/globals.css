@@ -134,3 +134,46 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   Right-to-left
+   The interface was written with physical utilities (pl-, mr-,
+   text-left). Rather than rewrite every one to a logical
+   equivalent, flip the handful that actually carry layout when
+   the document is RTL. Anything Tailwind already resolves from
+   the writing direction — flex order, text-align: start — needs
+   nothing here.
+   ============================================================ */
+
+[dir='rtl'] {
+  /* Arabic sits alongside Latin in the same interface, so the stack keeps
+     the Latin face for anything the Arabic face has no glyph for. */
+  --font-sans-effective: var(--font-arabic), var(--font-sans);
+}
+
+[dir='rtl'] body {
+  font-family: var(--font-arabic), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Numerals and identifiers stay left-to-right inside Arabic text. */
+[dir='rtl'] .font-mono,
+[dir='rtl'] code,
+[dir='rtl'] input[type='url'],
+[dir='rtl'] input[type='email'] {
+  direction: ltr;
+  text-align: start;
+  unicode-bidi: isolate;
+}
+
+/* Icon-plus-label buttons read outward from the text in both directions. */
+[dir='rtl'] .lucide {
+  transform: scaleX(1);
+}
+
+/* Chevrons and arrows point the other way when the page does. */
+[dir='rtl'] .lucide-chevron-right,
+[dir='rtl'] .lucide-chevron-left,
+[dir='rtl'] .lucide-arrow-right,
+[dir='rtl'] .lucide-arrow-left {
+  transform: scaleX(-1);
+}

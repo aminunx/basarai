@@ -57,6 +57,7 @@ dev:
 lint:
 	cd backend && ruff check .
 	cd frontend && npm run lint
+	cd frontend && npm run check:i18n
 
 test:
 	cd backend && pytest

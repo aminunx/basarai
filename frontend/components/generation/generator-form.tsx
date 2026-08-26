@@ -12,6 +12,7 @@ import { ProviderSelector } from '@/components/generation/provider-selector'
 import { CanvasStage } from '@/components/generation/canvas-stage'
 import { ErrorMessage } from '@/components/generation/error-message'
 import { Button } from '@/components/ui/button'
+import { useDict, useLocale } from '@/lib/i18n/provider'
 import { downloadImageFile } from '@/lib/download'
 import { PLATFORM_PRESETS } from '@/lib/presets'
 import type { LogoMode, PlatformPreset, Provider } from '@/types'
@@ -31,6 +32,8 @@ export function GeneratorForm({ brandId, brandName, brandHasLogo }: GeneratorFor
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
+  const d = useDict()
+  const { t } = useLocale()
   const { activeKeys, loading: keysLoading } = useActiveKeys(brandId)
   const { providers, loading: providersLoading } = useProviders(brandId)
   const { state, generate, reset } = useGenerate(brandId)
@@ -104,9 +107,11 @@ export function GeneratorForm({ brandId, brandName, brandHasLogo }: GeneratorFor
         className="flex flex-col gap-[13px] xl:max-h-[calc(100dvh-3rem)]"
       >
         <div className="shrink-0">
-          <h1 className="text-[30px] font-semibold leading-[1.16] tracking-tight">Generate</h1>
+          <h1 className="text-[30px] font-semibold leading-[1.16] tracking-tight">
+            {d.generator.title}
+          </h1>
           <p className="mt-1 text-[14px] text-muted-foreground">
-            Describe the image. Basar paints it in {brandName}&apos;s voice.
+            {t(d.generator.subtitle, { brand: brandName })}
           </p>
         </div>
         <div className="shrink-0">
@@ -137,12 +142,12 @@ export function GeneratorForm({ brandId, brandName, brandHasLogo }: GeneratorFor
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Painting…
+                {d.generator.generating}
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4" />
-                Generate
+                {d.generator.generate}
               </>
             )}
           </Button>
@@ -171,7 +176,7 @@ export function GeneratorForm({ brandId, brandName, brandHasLogo }: GeneratorFor
             disabled={!canDownload || downloading}
           >
             <Download className="h-4 w-4" />
-            {downloading ? 'Downloading…' : 'Download'}
+            {downloading ? d.common.downloading : d.common.download}
           </Button>
         </div>
         {downloadError && <p className="text-[12px] text-destructive">{downloadError}</p>}
