@@ -6,6 +6,7 @@ import { useGenerationHistory } from '@/hooks/use-generation-history'
 import { useDeleteGeneration } from '@/hooks/use-delete-generation'
 import { useBrand } from '@/hooks/use-brand'
 import { HistoryList } from '@/components/history/history-list'
+import { useProviders } from '@/hooks/use-providers'
 import { HistoryFilters } from '@/components/history/history-filters'
 
 interface HistoryPageProps {
@@ -26,6 +27,7 @@ export default function HistoryPage({ params }: HistoryPageProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { brand } = useBrand(brandId)
+  const { providers } = useProviders(brandId)
 
   const provider = searchParams.get('provider') ?? undefined
   const status = searchParams.get('status') ?? undefined
@@ -75,6 +77,7 @@ export default function HistoryPage({ params }: HistoryPageProps) {
           </p>
         </div>
         <HistoryFilters
+          providers={providers}
           provider={provider}
           status={status}
           preset={preset}

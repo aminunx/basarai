@@ -33,6 +33,7 @@ export function AdminStatsCards({ stats }: AdminStatsCardsProps) {
         <StatCard label="OpenAI generations" value={stats.generations_by_provider.openai} />
         <StatCard label="Gemini generations" value={stats.generations_by_provider.gemini} />
         <StatCard label="MiniMax generations" value={stats.generations_by_provider.minimax} />
+        <StatCard label="Other providers" value={stats.generations_by_provider.other} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

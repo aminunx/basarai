@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Download, Loader2, Sparkles } from 'lucide-react'
 import { useActiveKeys } from '@/hooks/use-active-keys'
+import { useProviders } from '@/hooks/use-providers'
 import { useGenerate } from '@/hooks/use-generate'
 import { LogoModeSelector } from '@/components/generation/logo-mode-selector'
 import { PresetSelector } from '@/components/generation/preset-selector'
@@ -31,6 +32,7 @@ export function GeneratorForm({ brandId, brandName, brandHasLogo }: GeneratorFor
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
   const { activeKeys, loading: keysLoading } = useActiveKeys(brandId)
+  const { providers, loading: providersLoading } = useProviders(brandId)
   const { state, generate, reset } = useGenerate(brandId)
 
   useEffect(() => {
@@ -38,24 +40,18 @@ export function GeneratorForm({ brandId, brandName, brandHasLogo }: GeneratorFor
   }, [brandId])
 
   useEffect(() => {
-    if (keysLoading || providerInitialized) return
-    // Prefer a provider the brand can actually generate with; fall back to
-     // OpenAI so the form still renders when no key is configured at all.
-    const available = ([
-      ['gemini', activeKeys.geminiActive],
-      ['minimax', activeKeys.minimaxActive],
-      ['openai', activeKeys.openaiActive],
-    ] as const).filter(([, active]) => active)
-    setProvider(available.length > 0 ? available[0][0] : 'openai')
+    if (keysLoading || providersLoading || providerInitialized) return
+    if (providers.length === 0) return
+    // Prefer a provider this brand can actually generate with; otherwise show
+    // the first in the catalogue so the form still renders with no keys set up.
+    const usable = providers.find((p) => activeKeys[p.id])
+    setProvider((usable ?? providers[0]).id)
     setProviderInitialized(true)
-  }, [keysLoading, activeKeys, providerInitialized])
+  }, [keysLoading, providersLoading, providers, activeKeys, providerInitialized])
 
   const trimmedLen = prompt.trim().length
   const submitting = state.status === 'submitting'
-  const hasActiveKey =
-    (provider === 'openai' && activeKeys.openaiActive) ||
-    (provider === 'gemini' && activeKeys.geminiActive) ||
-    (provider === 'minimax' && activeKeys.minimaxActive)
+  const hasActiveKey = Boolean(activeKeys[provider])
   const generateDisabled =
     submitting ||
     trimmedLen < 3 ||
@@ -124,6 +120,7 @@ export function GeneratorForm({ brandId, brandName, brandHasLogo }: GeneratorFor
             <ProviderSelector
               value={provider}
               onChange={setProvider}
+              providers={providers}
               activeKeys={activeKeys}
               brandId={brandId}
               disabled={submitting}

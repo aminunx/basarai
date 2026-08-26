@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Literal
@@ -5,10 +6,20 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 
-class ProviderEnum(str, Enum):
-    openai = "openai"
-    gemini = "gemini"
-    minimax = "minimax"
+# Providers are no longer a closed set — a brand may register its own. Only the
+# shape is checked here; whether the identifier resolves for *this* brand is a
+# per-request question the router answers.
+PROVIDER_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,38}[a-z0-9]$")
+
+
+def validate_provider_id(v: str) -> str:
+    v = (v or "").strip()
+    if not PROVIDER_ID_RE.match(v):
+        raise ValueError(
+            "Provider must be 2-40 characters of lowercase letters, digits, "
+            "hyphens or underscores"
+        )
+    return v
 
 
 class LogoModeEnum(str, Enum):
@@ -43,9 +54,14 @@ class PlatformPresetEnum(str, Enum):
 
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=3, max_length=4000)
-    provider: ProviderEnum
+    provider: str
     platform_preset: PlatformPresetEnum
     logo_mode: LogoModeEnum = LogoModeEnum.none
+
+    @field_validator("provider")
+    @classmethod
+    def check_provider(cls, v: str) -> str:
+        return validate_provider_id(v)
 
     @field_validator("prompt")
     @classmethod
@@ -61,7 +77,7 @@ class GenerateRequest(BaseModel):
 class GenerationResponse(BaseModel):
     id: str
     prompt: str
-    provider: ProviderEnum
+    provider: str
     model: str
     platform_preset: PlatformPresetEnum
     width: int
@@ -84,7 +100,7 @@ class GenerationHistoryStatusEnum(str, Enum):
 class GenerationHistoryItem(BaseModel):
     id: str
     prompt_excerpt: str
-    provider: ProviderEnum
+    provider: str
     model: str
     platform_preset: PlatformPresetEnum
     width: int
@@ -106,7 +122,7 @@ class GenerationHistoryPage(BaseModel):
 class GenerationDetailResponse(BaseModel):
     id: str
     prompt: str
-    provider: ProviderEnum
+    provider: str
     model: str
     platform_preset: PlatformPresetEnum
     width: int

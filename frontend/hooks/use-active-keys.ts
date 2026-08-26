@@ -1,53 +1,51 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { apiRequest } from '@/lib/api'
 import type { ProviderKey } from '@/types'
 
-export interface ActiveKeys {
-  openaiActive: boolean
-  geminiActive: boolean
-  minimaxActive: boolean
-}
+/** Which providers this brand currently has an active key for, keyed by id. */
+export type ActiveKeys = Record<string, boolean>
 
 interface UseActiveKeysResult {
   activeKeys: ActiveKeys
+  hasActiveKey: (provider: string) => boolean
   loading: boolean
   error: string | null
   refetch: () => Promise<void>
 }
 
 export function useActiveKeys(brandId: string): UseActiveKeysResult {
-  const [activeKeys, setActiveKeys] = useState<ActiveKeys>({
-    openaiActive: false,
-    geminiActive: false,
-    minimaxActive: false,
-  })
+  const [activeKeys, setActiveKeys] = useState<ActiveKeys>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const keys = await apiRequest<ProviderKey[]>(`/brands/${brandId}/keys`)
-      setActiveKeys({
-        openaiActive: keys.some(k => k.provider === 'openai' && k.is_active),
-        geminiActive: keys.some(k => k.provider === 'gemini' && k.is_active),
-        minimaxActive: keys.some(k => k.provider === 'minimax' && k.is_active),
-      })
+      const map: ActiveKeys = {}
+      for (const key of keys) {
+        if (key.is_active) map[key.provider] = true
+      }
+      setActiveKeys(map)
     } catch (err) {
-      setActiveKeys({ openaiActive: false, geminiActive: false, minimaxActive: false })
+      setActiveKeys({})
       setError(err instanceof Error ? err.message : 'Failed to load keys')
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId])
 
-  return { activeKeys, loading, error, refetch: load }
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const hasActiveKey = useCallback(
+    (provider: string) => Boolean(activeKeys[provider]),
+    [activeKeys],
+  )
+
+  return { activeKeys, hasActiveKey, loading, error, refetch: load }
 }

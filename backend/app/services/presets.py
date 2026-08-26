@@ -33,11 +33,8 @@ PRESET_TO_ASPECT_RATIO: dict[str, str] = {
     "youtube_banner":       "16:9",
 }
 
-MODEL_FOR_PROVIDER: dict[str, str] = {
-    "openai": "gpt-image-2",
-    "gemini": "gemini-3-pro-image-preview",
-    "minimax": "image-01",
-}
+# Re-exported from the registry, which is the single declaration of a provider.
+from app.services.providers.registry import MODEL_FOR_PROVIDER  # noqa: E402,F401
 
 _BRAND_NAME_NON_ALNUM = re.compile(r"[^a-z0-9]+")
 

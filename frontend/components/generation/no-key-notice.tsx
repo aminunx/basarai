@@ -1,23 +1,16 @@
 import Link from 'next/link'
-import type { Provider } from '@/types'
 import { Notice } from '@/components/ui/notice'
 
-const PROVIDER_LABELS: Record<Provider, string> = {
-  openai: 'OpenAI',
-  gemini: 'Gemini',
-  minimax: 'MiniMax',
-}
-
 interface NoKeyNoticeProps {
-  provider: Provider
+  /** Display name, resolved by the caller from the provider catalogue. */
+  providerLabel: string
   brandId: string
 }
 
-export function NoKeyNotice({ provider, brandId }: NoKeyNoticeProps) {
-  const label = PROVIDER_LABELS[provider]
+export function NoKeyNotice({ providerLabel, brandId }: NoKeyNoticeProps) {
   return (
     <Notice variant="warning">
-      No {label} key yet —{' '}
+      No {providerLabel} key yet —{' '}
       <Link
         href={`/${brandId}/keys`}
         className="font-medium underline underline-offset-2"

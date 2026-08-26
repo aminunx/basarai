@@ -2,9 +2,10 @@
 
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { PLATFORM_PRESETS, PRESETS_BY_PLATFORM } from '@/lib/presets'
-import type { PlatformPreset } from '@/types'
+import type { PlatformPreset, ProviderInfo } from '@/types'
 
 interface HistoryFiltersProps {
+  providers: ProviderInfo[]
   provider: string | undefined
   status: string | undefined
   preset: string | undefined
@@ -14,6 +15,7 @@ interface HistoryFiltersProps {
 }
 
 export function HistoryFilters({
+  providers,
   provider,
   status,
   preset,
@@ -45,9 +47,11 @@ export function HistoryFilters({
         className="h-10 rounded-md border border-input bg-background px-3 text-[13px] shadow-xs focus-visible:border-brand focus-visible:shadow-[0_0_0_3px_var(--brand-ring)] focus-visible:outline-none"
       >
         <option value="">All providers</option>
-        <option value="openai">OpenAI</option>
-        <option value="gemini">Gemini</option>
-        <option value="minimax">MiniMax</option>
+        {providers.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label}
+          </option>
+        ))}
       </select>
       <label htmlFor="history-preset" className="sr-only">
         Filter by preset

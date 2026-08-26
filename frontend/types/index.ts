@@ -52,7 +52,7 @@ export interface LogoUploadResponse {
 
 export interface ProviderKey {
   id: string
-  provider: 'openai' | 'gemini' | 'minimax'
+  provider: Provider
   label: string | null
   key_hint: string | null
   is_active: boolean
@@ -63,7 +63,7 @@ export interface ProviderKey {
 }
 
 export interface AddKeyRequest {
-  provider: 'openai' | 'gemini' | 'minimax'
+  provider: Provider
   key: string
   label?: string | null
   make_active?: boolean
@@ -101,7 +101,42 @@ export interface UpsertKitRequest {
   answers: KitAnswers
 }
 
-export type Provider = 'openai' | 'gemini' | 'minimax'
+/**
+ * A provider identifier: a built-in catalogue id, or the slug of an endpoint
+ * this brand registered. Open by design — the list comes from the API.
+ */
+export type Provider = string
+
+export interface ProviderInfo {
+  id: string
+  label: string
+  adapter: 'openai' | 'gemini' | 'minimax' | 'openai_compatible'
+  default_model: string
+  models: string[]
+  is_custom: boolean
+  docs_url: string
+  key_hint: string
+  base_url: string | null
+  supports_validation: boolean
+}
+
+export interface CustomProvider {
+  id: string
+  slug: string
+  label: string
+  base_url: string
+  model: string
+  auth_style: 'bearer' | 'x-api-key'
+  created_at: string
+}
+
+export interface CustomProviderRequest {
+  slug: string
+  label: string
+  base_url: string
+  model: string
+  auth_style?: 'bearer' | 'x-api-key'
+}
 export type LogoMode = 'none' | 'prompt' | 'watermark' | 'both'
 export type GenerationStatus = 'pending' | 'processing' | 'succeeded' | 'failed'
 
@@ -184,6 +219,8 @@ export interface GenerationProviderBreakdown {
   openai: number
   gemini: number
   minimax: number
+  /** Everything on the OpenAI-compatible adapter, built-in or custom. */
+  other: number
 }
 
 export interface AdminStats {

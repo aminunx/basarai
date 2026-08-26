@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { useKeys } from '@/hooks/use-keys'
+import { useProviders } from '@/hooks/use-providers'
+import { CustomProviderPanel } from '@/components/keys/custom-provider-panel'
 import { ProviderTabs } from '@/components/keys/provider-tabs'
 import { KeyCard } from '@/components/keys/key-card'
 import { AddKeyModal } from '@/components/keys/add-key-modal'
@@ -16,9 +18,11 @@ export default function KeysPage() {
   const params = useParams()
   const brandId = Array.isArray(params.brandId) ? params.brandId[0] : params.brandId ?? ''
   const { keys, loading, error, refetch } = useKeys(brandId)
+  const { providers, loading: providersLoading, refetch: refetchProviders } =
+    useProviders(brandId)
 
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addModalProvider, setAddModalProvider] = useState<Provider>('openai')
+  const [addModalProvider, setAddModalProvider] = useState<Provider>('')
   const [validatingKeyId, setValidatingKeyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -64,7 +68,7 @@ export default function KeysPage() {
     setShowAddModal(true)
   }
 
-  if (loading) {
+  if (loading || providersLoading) {
     return <p className="text-muted-foreground">Loading…</p>
   }
 
@@ -76,7 +80,7 @@ export default function KeysPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-[30px] font-semibold leading-[1.16] tracking-tight">Keys</h1>
-        <Button type="button" onClick={() => handleAddClick('openai')}>
+        <Button type="button" onClick={() => handleAddClick(providers[0]?.id ?? '')}>
           <Plus className="h-4 w-4" />
           Add key
         </Button>
@@ -84,12 +88,12 @@ export default function KeysPage() {
 
       {actionError && <Notice variant="danger">{actionError}</Notice>}
 
-      <ProviderTabs keys={keys}>
+      <ProviderTabs keys={keys} providers={providers}>
         {(filteredKeys, activeProvider) => (
           <div className="space-y-2.5">
             {filteredKeys.length === 0 ? (
               <Notice variant="warning">
-                No {activeProvider === 'openai' ? 'OpenAI' : 'Gemini'} key yet —{' '}
+                No {providers.find((p) => p.id === activeProvider)?.label ?? activeProvider} key yet —{' '}
                 <button
                   type="button"
                   onClick={() => handleAddClick(activeProvider)}
@@ -115,12 +119,22 @@ export default function KeysPage() {
         )}
       </ProviderTabs>
 
+      <CustomProviderPanel
+        brandId={brandId}
+        providers={providers}
+        onChanged={() => {
+          void refetchProviders()
+          refetch()
+        }}
+      />
+
       <AddKeyModal
         brandId={brandId}
         open={showAddModal}
         onOpenChange={setShowAddModal}
         onKeyAdded={refetch}
         defaultProvider={addModalProvider}
+        providers={providers}
       />
     </div>
   )

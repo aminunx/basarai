@@ -12,7 +12,8 @@ from app.models.provider_key import (
     ProviderKeyResponse,
     ValidateKeyResponse,
 )
-from app.services.provider_validation import validate_provider_key
+from app.services.provider_resolver import UnknownProviderError, resolve_provider
+from app.services.provider_validation import validate_key_for_spec
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,17 @@ async def add_key(
     current_user: User = Depends(get_current_user),
 ):
     _get_brand_or_404(brand_id, current_user.id)
+
+    try:
+        provider_spec = resolve_provider(body.provider, str(brand_id))
+    except UnknownProviderError:
+        raise _error_response(
+            400,
+            "UNKNOWN_PROVIDER",
+            f"'{body.provider}' is not available for this brand. "
+            "Pick a built-in provider or register it on the Providers page.",
+        )
+
     client = get_service_client()
 
     key_hint = body.key[-4:] if len(body.key) >= 4 else ("*" * len(body.key))
@@ -109,7 +121,7 @@ async def add_key(
         raise _error_response(502, "VAULT_ERROR", "Failed to store key securely") from e
 
     # Validate BEFORE touching active status so failures don't orphan the old key
-    is_valid, validation_error = await validate_provider_key(body.provider, body.key)
+    is_valid, validation_error = await validate_key_for_spec(provider_spec, body.key)
     now = datetime.now(timezone.utc).isoformat()
 
     deactivated_key_id = None

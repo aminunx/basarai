@@ -3,11 +3,10 @@
 import { useEffect, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
-import { ProviderKey, type Provider } from '@/types'
+import { ProviderKey, type Provider, type ProviderInfo } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { SegmentedControl } from '@/components/ui/segmented-control'
 import {
   Dialog,
   DialogContent,
@@ -17,18 +16,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-const PROVIDERS: readonly Provider[] = ['openai', 'gemini', 'minimax']
-
-function isProvider(value: string | undefined): value is Provider {
-  return value !== undefined && (PROVIDERS as readonly string[]).includes(value)
-}
-
 interface AddKeyModalProps {
   brandId: string
   open: boolean
   onOpenChange: (open: boolean) => void
   onKeyAdded: () => void
   defaultProvider?: string
+  providers: ProviderInfo[]
 }
 
 export function AddKeyModal({
@@ -37,10 +31,9 @@ export function AddKeyModal({
   onOpenChange,
   onKeyAdded,
   defaultProvider,
+  providers,
 }: AddKeyModalProps) {
-  const [provider, setProvider] = useState<Provider>(
-    isProvider(defaultProvider) ? defaultProvider : 'openai'
-  )
+  const [provider, setProvider] = useState<Provider>(defaultProvider ?? '')
   const [key, setKey] = useState('')
   const [label, setLabel] = useState('')
   const [makeActive, setMakeActive] = useState(true)
@@ -48,12 +41,13 @@ export function AddKeyModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const selectedProvider = providers.find((p) => p.id === provider)
+
   useEffect(() => {
     if (!open) return
-    if (isProvider(defaultProvider)) {
-      setProvider(defaultProvider)
-    }
-  }, [open, defaultProvider])
+    const known = providers.some((p) => p.id === defaultProvider)
+    setProvider(known && defaultProvider ? defaultProvider : (providers[0]?.id ?? ''))
+  }, [open, defaultProvider, providers])
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -101,15 +95,33 @@ export function AddKeyModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Provider</Label>
-            <SegmentedControl
+            <select
+              id="add-key-provider"
               value={provider}
-              onChange={setProvider}
-              options={[
-                { value: 'openai', label: 'OpenAI' },
-                { value: 'gemini', label: 'Gemini' },
-                { value: 'minimax', label: 'MiniMax' },
-              ]}
-            />
+              onChange={(e) => setProvider(e.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-[13px] shadow-xs focus-visible:border-brand focus-visible:shadow-[0_0_0_3px_var(--brand-ring)] focus-visible:outline-none"
+            >
+              {providers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            {selectedProvider?.key_hint && (
+              <p className="font-mono text-[11px] text-muted-foreground">
+                {selectedProvider.key_hint}
+              </p>
+            )}
+            {selectedProvider?.docs_url && (
+              <a
+                href={selectedProvider.docs_url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-[12px] underline underline-offset-2 text-muted-foreground hover:text-foreground"
+              >
+                Where to find this key
+              </a>
+            )}
           </div>
 
           <div className="space-y-2">

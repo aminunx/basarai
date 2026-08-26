@@ -2,11 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, field_validator
 
-from app.models.generation import ProviderEnum
-
-# Derived rather than repeated, so a new provider cannot be accepted by the
-# generation endpoint while still being rejected when its key is added.
-_ALLOWED_PROVIDERS = tuple(p.value for p in ProviderEnum)
+from app.models.generation import validate_provider_id
 
 
 class AddKeyRequest(BaseModel):
@@ -18,10 +14,7 @@ class AddKeyRequest(BaseModel):
     @field_validator("provider")
     @classmethod
     def validate_provider(cls, v: str) -> str:
-        if v not in _ALLOWED_PROVIDERS:
-            allowed = ", ".join(f"'{p}'" for p in _ALLOWED_PROVIDERS)
-            raise ValueError(f"Provider must be one of: {allowed}")
-        return v
+        return validate_provider_id(v)
 
     @field_validator("key")
     @classmethod

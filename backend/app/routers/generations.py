@@ -21,7 +21,7 @@ from app.models.generation import (
     GenerationHistoryStatusEnum,
     GenerationResponse,
     LogoModeEnum,
-    ProviderEnum,
+    PROVIDER_ID_RE,
 )
 from app.services.error_mapping import classify_provider_error
 from app.services.postprocess import resize_to_preset
@@ -33,9 +33,8 @@ from app.services.presets import (
 )
 from app.services.prompt_composer import BrandContext, build_platform_context, compose_full_prompt
 from app.services.providers.base import ProviderError, ProviderResult
-from app.services.providers.gemini_image import gemini_generate
-from app.services.providers.minimax_image import minimax_generate
-from app.services.providers.openai_image import openai_generate
+from app.services.provider_resolver import UnknownProviderError, resolve_provider
+from app.services.providers.dispatch import generate_image
 from app.services.watermark import apply_watermark
 
 logger = logging.getLogger(__name__)
@@ -284,7 +283,17 @@ async def generate_image(
 
     preset_w, preset_h, _label = PLATFORM_PRESETS[body.platform_preset.value]
 
-    active_key = _get_active_key_or_400(brand_id, body.provider.value)
+    try:
+        provider_spec = resolve_provider(body.provider, str(brand_id))
+    except UnknownProviderError:
+        raise _error_response(
+            400,
+            "UNKNOWN_PROVIDER",
+            f"'{body.provider}' is not available for this brand. "
+            "Pick a built-in provider or register it on the Providers page.",
+        )
+
+    active_key = _get_active_key_or_400(brand_id, body.provider)
 
     aspect_ratio = PRESET_TO_ASPECT_RATIO[body.platform_preset.value]
     platform = build_platform_context(
@@ -296,7 +305,7 @@ async def generate_image(
     brand_context = _get_brand_kit_context(brand_id, brand_name)
 
     generation_id = uuid4()
-    resolved_model = MODEL_FOR_PROVIDER[body.provider.value]
+    resolved_model = provider_spec.default_model
 
     client = get_service_client()
     client.table("generations").insert(
@@ -304,7 +313,7 @@ async def generate_image(
             "id": str(generation_id),
             "brand_id": str(brand_id),
             "prompt": body.prompt,
-            "provider": body.provider.value,
+            "provider": body.provider,
             "model": resolved_model,
             "platform_preset": body.platform_preset.value,
             "width": preset_w,
@@ -316,7 +325,7 @@ async def generate_image(
 
     logger.info(
         "generate start generation_id=%s brand_id=%s provider=%s preset=%s logo_mode=%s",
-        generation_id, brand_id, body.provider.value,
+        generation_id, brand_id, body.provider,
         body.platform_preset.value, body.logo_mode.value,
     )
 
@@ -336,38 +345,18 @@ async def generate_image(
         api_key = read_secret(active_key["vault_secret_id"])
 
         try:
-            if body.provider is ProviderEnum.openai:
-                result: ProviderResult = await asyncio.wait_for(
-                    openai_generate(
-                        api_key=api_key,
-                        prompt=full_prompt,
-                        width=preset_w,
-                        height=preset_h,
-                        model=resolved_model,
-                    ),
-                    timeout=120.0,
-                )
-            elif body.provider is ProviderEnum.minimax:
-                result = await asyncio.wait_for(
-                    minimax_generate(
-                        api_key=api_key,
-                        prompt=full_prompt,
-                        aspect_ratio=aspect_ratio,
-                        model=resolved_model,
-                    ),
-                    timeout=120.0,
-                )
-            else:
-                result = await asyncio.wait_for(
-                    asyncio.to_thread(
-                        gemini_generate,
-                        api_key=api_key,
-                        prompt=full_prompt,
-                        aspect_ratio=aspect_ratio,
-                        model=resolved_model,
-                    ),
-                    timeout=120.0,
-                )
+            result: ProviderResult = await asyncio.wait_for(
+                generate_image(
+                    spec=provider_spec,
+                    api_key=api_key,
+                    prompt=full_prompt,
+                    width=preset_w,
+                    height=preset_h,
+                    aspect_ratio=aspect_ratio,
+                    model=resolved_model,
+                ),
+                timeout=120.0,
+            )
         except asyncio.TimeoutError as exc:
             raise ProviderError(
                 "TIMEOUT",
@@ -446,7 +435,7 @@ async def generate_image(
             row = {
                 "id": str(generation_id),
                 "prompt": body.prompt,
-                "provider": body.provider.value,
+                "provider": body.provider,
                 "model": resolved_model,
                 "platform_preset": body.platform_preset.value,
                 "width": preset_w,
@@ -488,7 +477,9 @@ async def generate_image(
 
 
 _VALID_HISTORY_STATUSES = {s.value for s in GenerationHistoryStatusEnum}
-_VALID_HISTORY_PROVIDERS = {p.value for p in ProviderEnum}
+# The history filter accepts any well-formed identifier; an unknown one simply
+# matches nothing, which is the correct answer rather than an error.
+_HISTORY_PROVIDER_RE = PROVIDER_ID_RE
 
 
 @router.get("/generations", response_model=GenerationHistoryPage)
@@ -501,7 +492,7 @@ async def list_generation_history(
 ) -> GenerationHistoryPage:
     _get_brand_or_404(brand_id, current_user.id)
 
-    if provider is not None and provider not in _VALID_HISTORY_PROVIDERS:
+    if provider is not None and not _HISTORY_PROVIDER_RE.match(provider):
         raise _error_response(400, "VALIDATION_ERROR", f"Invalid provider filter: {provider}")
     if status is not None and status not in _VALID_HISTORY_STATUSES:
         raise _error_response(400, "VALIDATION_ERROR", f"Invalid status filter: {status}")
